@@ -9,7 +9,7 @@ const port = process.env.PORT || 5000;
 // middleware
 
 app.use(cors());
-app.use(express());
+app.use(express.json());
 
 
 
@@ -31,7 +31,18 @@ async function run() {
 
         const blogCollection = client.db("blogDB").collection('blogs')
 
+        app.post('/blogs', async (req, res) => {
+            const blog = req.body;
+            console.log(blog);
+            const result = await blogCollection.insertOne(blog);
+            res.send(result)
+        })
 
+        app.get('/blogs', async (req, res) => {
+            const cursor = blogCollection.find()
+            const result = await cursor.toArray()
+            res.send(result)
+        })
 
 
 
