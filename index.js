@@ -114,6 +114,14 @@ async function run() {
 
         })
 
+         // getting comments and render in detail blog page
+
+         app.get('/comments', async (req, res) => {
+            const cursor = commentCollection.find()
+            const result = await cursor.toArray()
+            res.send(result)
+        })
+
        
 
         // loading category specific blog
