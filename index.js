@@ -51,6 +51,7 @@ async function run() {
                 .send({ success: true })
         })
 
+        // creating new posts
         app.post('/blogs', async (req, res) => {
             const blog = req.body;
             console.log(blog);
@@ -58,13 +59,31 @@ async function run() {
             res.send(result)
         })
 
+
+        // updating a single blog post
+        app.patch('/blogs/:id', async (req, res) => {
+            const id = req.params.id
+            const filter = { _id: new ObjectId(id) }
+            const updateBlog = req.body;
+            console.log(updateBlog)
+            const updateDoc = {
+                $set: {
+                    status: updateBlog.status
+                }
+            }
+            const result = await blogCollection.updateOne(filter, updateDoc)
+            res.send(result)
+        })
+
+
+        // reading blog post from database
         app.get('/blogs', async (req, res) => {
             const cursor = blogCollection.find()
             const result = await cursor.toArray()
             res.send(result)
         })
 
-
+        // creating wishlist for blog posts
         app.post('/blogs/wish', async (req, res) => {
             const wish = req.body;
             console.log('wish-list', wish);
@@ -86,6 +105,15 @@ async function run() {
 
             res.send(result)
         })
+
+        // getting comments and render in detail blog page
+
+        app.get('/comments', async (req, res) => {
+            const cursor = commentCollection.find()
+            const result = await cursor.toArray()
+            res.send(result)
+        })
+
 
 
         app.delete('/wish/:id', async (req, res) => {
@@ -114,15 +142,8 @@ async function run() {
 
         })
 
-         // getting comments and render in detail blog page
 
-         app.get('/comments', async (req, res) => {
-            const cursor = commentCollection.find()
-            const result = await cursor.toArray()
-            res.send(result)
-        })
 
-       
 
         // loading category specific blog
 
