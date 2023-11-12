@@ -35,6 +35,7 @@ async function run() {
 
         const blogCollection = client.db("blogDB").collection('blogs')
         const wishCollection = client.db("wishDB").collection('wishes')
+        const commentCollection = client.db("commentDB").collection('comments')
 
         app.post('/jwt', async (req, res) => {
             const user = req.body;
@@ -75,7 +76,6 @@ async function run() {
 
         // loading user specific wishlist
         app.get('/wish', async (req, res) => {
-            console.log(req.query.email);
 
             let query = {}
 
@@ -95,9 +95,28 @@ async function run() {
             res.send(result)
         })
 
-        
-        // loading category specific blog
+        //  posting detail blog in detail collection
 
+        app.post('/details', async (req, res) => {
+            const blog = req.body;
+            console.log(blog);
+            const result = await detailsCollection.insertOne(blog);
+            res.send(result)
+
+        })
+
+        // posting comments in comment database
+
+        app.post('/comments', async (req, res) => {
+            const comment = req.body;
+            console.log(comment)
+            const result = await commentCollection.insertOne(comment)
+
+        })
+
+       
+
+        // loading category specific blog
 
         app.get('/blogs', async (req, res) => {
             let query = {}
@@ -111,6 +130,11 @@ async function run() {
             res.send(result)
 
 
+
+
+
+
+
             // let sortObj = {}
 
             // const sortField = req.query.sortField;
@@ -122,8 +146,6 @@ async function run() {
             // }
 
         })
-
-
 
 
         // Send a ping to confirm a successful connection
