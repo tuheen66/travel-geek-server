@@ -59,19 +59,33 @@ async function run() {
             res.send(result)
         })
 
+        // getting a single blog
+        app.get('/blogs/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) };
+            const result = await blogCollection.findOne(query);
+            res.send(result)
+        })
+
 
         // updating a single blog post
-        app.patch('/blogs/:id', async (req, res) => {
+        app.put('/blogs/:id', async (req, res) => {
             const id = req.params.id
             const filter = { _id: new ObjectId(id) }
+            const option = { upsert: true }
             const updateBlog = req.body;
             console.log(updateBlog)
             const updateDoc = {
                 $set: {
-                    status: updateBlog.status
+                    title: updateBlog.title,
+                    image: updateBlog.image,
+                    category: updateBlog.category,
+                    short_description: updateBlog.short_description,
+                    long_description: updateBlog.long_description,
+                    time: updateBlog.time,
                 }
             }
-            const result = await blogCollection.updateOne(filter, updateDoc)
+            const result = await blogCollection.updateOne(filter, updateDoc, option)
             res.send(result)
         })
 
