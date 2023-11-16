@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const jwt = require('jsonwebtoken')
+const cookieParser = require('cookie-parser')
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 require('dotenv').config();
 
@@ -14,7 +15,29 @@ app.use(cors({
     credentials: true
 }));
 app.use(express.json());
+app.use(cookieParser());
 
+
+const logger = (req, res, next) => {
+    console.log(req.method, req.url)
+    next();
+}
+
+
+const verifyToken = (req, res, next) => {
+    const token = req?.cookies?.token;
+    // console.log('token in the middleware', token);
+    if (!token) {
+        return res.status(401).send({ message: 'unauthorized access' })
+    }
+    jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
+        if (err) {
+            return res.status(401).send({ message: 'unauthorized access' })
+        }
+        req.user = decoded;
+        next()
+    })
+}
 
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.1gnzeig.mongodb.net/?retryWrites=true&w=majority`;
@@ -37,6 +60,8 @@ async function run() {
         const wishCollection = client.db("wishDB").collection('wishes')
         const commentCollection = client.db("commentDB").collection('comments')
 
+
+        // jwt token api
         app.post('/jwt', async (req, res) => {
             const user = req.body;
             console.log(user)
@@ -45,14 +70,20 @@ async function run() {
             res
                 .cookie('token', token, {
                     httpOnly: true,
-                    secure: false,
+                    secure: true,
                     sameSite: 'none'
                 })
                 .send({ success: true })
         })
 
+        app.post('/logout', async (req, res) => {
+            const user = req.body;
+            console.log('logging out', user)
+            res.clearCookie('token', { maxAge: 0 }).send({ success: true })
+        })
+
         // creating new posts
-        app.post('/blogs', async (req, res) => {
+        app.post('/blogs', logger, verifyToken, async (req, res) => {
             const blog = req.body;
             console.log(blog);
             const result = await blogCollection.insertOne(blog);
@@ -69,7 +100,7 @@ async function run() {
 
 
         // updating a single blog post
-        app.put('/blogs/:id', async (req, res) => {
+        app.put('/blogs/:id', logger, verifyToken, async (req, res) => {
             const id = req.params.id
             const filter = { _id: new ObjectId(id) }
             const option = { upsert: true }
@@ -92,10 +123,23 @@ async function run() {
 
         // reading blog post from database
         app.get('/blogs', async (req, res) => {
-            const cursor = blogCollection.find()
+
+            let query = {}
+
+            const { category, title } = req.query;
+
+            if (category) {
+                query.category = category
+            }
+            if (title) {
+                query.title = title
+            }
+
+            const cursor = blogCollection.find(query)
             const result = await cursor.toArray()
             res.send(result)
         })
+
 
         // creating wishlist for blog posts
         app.post('/blogs/wish', async (req, res) => {
@@ -108,10 +152,12 @@ async function run() {
 
 
         // loading user specific wishlist
-        app.get('/wish', async (req, res) => {
-
+        app.get('/wish', logger, verifyToken, async (req, res) => {
+            console.log('token owner info', req.user)
+            if (req.user.email !== req.query.email) {
+                return res.status(403).send({ message: 'forbidden access' })
+            }
             let query = {}
-
             if (req.query?.email) {
                 query = { email: req.query.email }
             }
