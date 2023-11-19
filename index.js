@@ -11,7 +11,10 @@ const port = process.env.PORT || 5000;
 // middleware
 
 app.use(cors({
-    origin: ['http://localhost:5173'],
+    origin: [
+        // 'http://localhost:5173',
+        'https://blog-website-366b7.web.app',
+        'https://blog-website-366b7.firebaseapp.com'],
     credentials: true
 }));
 app.use(express.json());
@@ -55,7 +58,7 @@ const client = new MongoClient(uri, {
 async function run() {
     try {
         // Connect the client to the server	(optional starting in v4.7)
-        await client.connect();
+        // await client.connect();
 
         const blogCollection = client.db("blogDB").collection('blogs')
         const wishCollection = client.db("wishDB").collection('wishes')
@@ -138,21 +141,6 @@ async function run() {
             const result = await cursor.toArray()
             res.send(result)
         })
-
-        // app.get('/blogs', async (req, res) => {
-
-
-        //     let sortObj = {
-        //         long_description: desc
-        //     }
-
-        //     const sortField = req.query.sortField;
-        //     const sortOrder = req.query.sortOrder;
-
-        //     const cursor = blogCollection.find(sortObj)
-        //     const result = await cursor.toArray()
-        //     res.send(result)
-        // })
 
 
         // creating wishlist for blog posts
