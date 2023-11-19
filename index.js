@@ -18,7 +18,8 @@ app.use(express.json());
 app.use(cookieParser());
 
 
-const logger = (req, res, next) => {
+// created middleware
+const logger = async (req, res, next) => {
     console.log(req.method, req.url)
     next();
 }
@@ -28,7 +29,7 @@ const verifyToken = (req, res, next) => {
     const token = req?.cookies?.token;
     // console.log('token in the middleware', token);
     if (!token) {
-        return res.status(401).send({ message: 'unauthorized access' })
+        return res.status(401).send({ message: 'unauthorized access *' })
     }
     jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
         if (err) {
@@ -62,11 +63,9 @@ async function run() {
 
 
         // jwt token api
-        app.post('/jwt', async (req, res) => {
+        app.post('/jwt', logger, async (req, res) => {
             const user = req.body;
-            console.log(user)
             const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '1h' })
-
             res
                 .cookie('token', token, {
                     httpOnly: true,
@@ -83,7 +82,7 @@ async function run() {
         })
 
         // creating new posts
-        app.post('/blogs', logger, verifyToken, async (req, res) => {
+        app.post('/blogs', logger, async (req, res) => {
             const blog = req.body;
             console.log(blog);
             const result = await blogCollection.insertOne(blog);
@@ -100,7 +99,7 @@ async function run() {
 
 
         // updating a single blog post
-        app.put('/blogs/:id', logger, verifyToken, async (req, res) => {
+        app.put('/blogs/:id', logger, async (req, res) => {
             const id = req.params.id
             const filter = { _id: new ObjectId(id) }
             const option = { upsert: true }
@@ -121,7 +120,7 @@ async function run() {
         })
 
 
-        // reading blog post from database
+        // reading blog post from database and filter according to category and search according to title
         app.get('/blogs', async (req, res) => {
 
             let query = {}
@@ -140,6 +139,21 @@ async function run() {
             res.send(result)
         })
 
+        // app.get('/blogs', async (req, res) => {
+
+
+        //     let sortObj = {
+        //         long_description: desc
+        //     }
+
+        //     const sortField = req.query.sortField;
+        //     const sortOrder = req.query.sortOrder;
+
+        //     const cursor = blogCollection.find(sortObj)
+        //     const result = await cursor.toArray()
+        //     res.send(result)
+        // })
+
 
         // creating wishlist for blog posts
         app.post('/blogs/wish', async (req, res) => {
@@ -148,7 +162,6 @@ async function run() {
             const result = await wishCollection.insertOne(wish);
             res.send(result)
         })
-
 
 
         // loading user specific wishlist
@@ -167,7 +180,6 @@ async function run() {
         })
 
         // getting comments and render in detail blog page
-
         app.get('/comments', async (req, res) => {
             const cursor = commentCollection.find()
             const result = await cursor.toArray()
@@ -175,7 +187,7 @@ async function run() {
         })
 
 
-
+        // delete item from wishlist
         app.delete('/wish/:id', async (req, res) => {
             const id = req.params.id;
             const query = { _id: new ObjectId(id) };
@@ -184,7 +196,6 @@ async function run() {
         })
 
         //  posting detail blog in detail collection
-
         app.post('/details', async (req, res) => {
             const blog = req.body;
             console.log(blog);
@@ -194,7 +205,6 @@ async function run() {
         })
 
         // posting comments in comment database
-
         app.post('/comments', async (req, res) => {
             const comment = req.body;
             console.log(comment)
@@ -203,10 +213,7 @@ async function run() {
         })
 
 
-
-
         // loading category specific blog
-
         app.get('/blogs', async (req, res) => {
             let query = {}
 
@@ -218,21 +225,6 @@ async function run() {
             const result = await blogCollection.find(query).toArray()
             res.send(result)
 
-
-
-
-
-
-
-            // let sortObj = {}
-
-            // const sortField = req.query.sortField;
-            // const sortOrder = req.query.sortOrder;
-
-
-            // if (sortField && sortOrder) {
-            //     sortObj[sortField] = sortField
-            // }
 
         })
 
@@ -246,12 +238,6 @@ async function run() {
     }
 }
 run().catch(console.dir);
-
-
-
-
-
-
 
 
 
